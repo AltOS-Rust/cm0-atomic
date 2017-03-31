@@ -15,28 +15,28 @@
 * along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-macro_rules! start_critical {
-    ($var:ident) => {{
+macro_rules! __start_critical {
+    () => {{
         unsafe {
-            #![cfg(target_arch="arm")]
+            let primask: u32;
             asm!(
                 concat!(
                     "mrs $0, PRIMASK\n",
                     "cpsid i\n"
                 )
-                : "=r"($var)
+                : "=r"(primask)
                 : /* no inputs */
                 : /* no clobbers */
                 : "volatile"
             );
+            primask
         }
     }}
 }
 
-macro_rules! end_critical {
+macro_rules! __end_critical {
     ($var:ident) => {{
         unsafe {
-            #![cfg(target_arch="arm")]
             asm!("msr PRIMASK, $0"
             : /* no outputs */
             : "r"($var)
@@ -47,19 +47,39 @@ macro_rules! end_critical {
 }
 
 macro_rules! atomic {
-    { $( $code:expr );*; } => {{
-        let primask: u32;
-        start_critical!(primask);
-        $(
-            $code;
-        )*
-        end_critical!(primask);
-    }};
-    { $last:expr } => {{
-        let primask: u32;
-        start_critical!(primask);
-        let result = $last;
-        end_critical!(primask);
+    { $( $code:tt )* } => {{
+        #[cfg(target_arch="arm")]
+        let primask: u32 = __start_critical!();
+        let result = __atomic_inner!($($code)*);
+        #[cfg(target_arch="arm")]
+        __end_critical!(primask);
         result
     }}
+}
+
+macro_rules! __atomic_inner {
+    // Recursive base case
+    () => {};
+
+    // If the first item in the tree is a statement
+    ( $first:stmt; $($rest:tt)* ) => {{
+        $first;
+        __atomic_inner!($($rest)*)
+    }};
+
+    // If the first item in the tree is an expression
+    ( $first:expr; $($rest:tt)* ) => {{
+        $first;
+        __atomic_inner!($($rest)*)
+    }};
+
+    // Handle only one statement
+    ( $first:stmt; ) => {{
+        $first;
+    }};
+
+    // Handle only one expression
+    ( $first:expr ) => {{
+        $first
+    }};
 }

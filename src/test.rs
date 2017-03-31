@@ -16,10 +16,25 @@
 */
 
 macro_rules! atomic {
-    { $( $code:expr );*; } => {{
-        $(
-            $code;
-        )*
+    { $( $code:tt )* } => {{
+        __atomic_inner!($($code)*)
     }};
-    { $last:expr } => {{ $last }}
+}
+
+macro_rules! __atomic_inner {
+    () => {};
+    ( $first:stmt; $($rest:tt)* ) => {{
+        $first;
+        __atomic_inner!($($rest)*)
+    }};
+    ( $first:expr; $($rest:tt)* ) => {{
+        $first;
+        __atomic_inner!($($rest)*)
+    }};
+    ( $first:stmt; ) => {{
+        $first;
+    }};
+    ( $first:expr ) => {{
+        $first
+    }};
 }

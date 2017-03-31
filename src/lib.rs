@@ -129,14 +129,12 @@ impl<T> AtomicPtr<T> {
         -> Result<*mut T, *mut T> {
 
         atomic! {
-            unsafe {
-                let old = self.p.get();
-                if *old == current {
-                    Ok(::core::mem::replace(&mut *old, new))
-                }
-                else {
-                    Err(*old)
-                }
+            let old = unsafe { &mut *self.p.get() };
+            if *old == current {
+                Ok(::core::mem::replace(old, new))
+            }
+            else {
+                Err(*old)
             }
         }
     }
@@ -153,11 +151,9 @@ impl<T> AtomicPtr<T> {
 impl AtomicBool {
     pub fn fetch_nand(&self, value: bool, _order: Ordering) -> bool {
         atomic! {
-            unsafe {
-                let old = self.data.get();
-                let new = !(*old && value);
-                ::core::mem::replace(&mut *old, new)
-            }
+            let old = unsafe { &mut *self.data.get() };
+            let new = !(*old && value);
+            ::core::mem::replace(old, new)
         }
     }
 }
@@ -212,7 +208,7 @@ impl<T: Copy + Default> Default for Atomic<T> {
     }
 }
 
-impl<T: Copy + PartialOrd> Atomic<T> {
+impl<T: Copy + PartialEq> Atomic<T> {
     pub fn compare_and_swap(&self, current: T, new: T, order: Ordering) -> T {
         match self.compare_exchange(current, new, order, order) {
             Ok(x) => x,
@@ -226,14 +222,12 @@ impl<T: Copy + PartialOrd> Atomic<T> {
         -> Result<T, T> {
 
         atomic! {
-            unsafe {
-                let old = self.data.get();
-                if *old == current {
-                    Ok(::core::mem::replace(&mut *old, new))
-                }
-                else {
-                    Err(*old)
-                }
+            let old = unsafe { &mut *self.data.get() };
+            if *old == current {
+                Ok(::core::mem::replace(old, new))
+            }
+            else {
+                Err(*old)
             }
         }
     }
@@ -250,11 +244,9 @@ impl<T: Copy + PartialOrd> Atomic<T> {
 impl<T: Copy + Add<Output=T>> Atomic<T> {
     pub fn fetch_add(&self, data: T, _order: Ordering) -> T {
         atomic! {
-            unsafe {
-                let old = self.data.get();
-                let new = *old + data;
-                ::core::mem::replace(&mut *old, new)
-            }
+            let old = unsafe { &mut *self.data.get() };
+            let new = *old + data;
+            ::core::mem::replace(old, new)
         }
     }
 }
@@ -262,11 +254,9 @@ impl<T: Copy + Add<Output=T>> Atomic<T> {
 impl<T: Copy + Sub<Output=T>> Atomic<T> {
     pub fn fetch_sub(&self, data: T, _order: Ordering) -> T {
         atomic! {
-            unsafe {
-                let old = self.data.get();
-                let new = *old - data;
-                ::core::mem::replace(&mut *old, new)
-            }
+            let old = unsafe { &mut *self.data.get() };
+            let new = *old - data;
+            ::core::mem::replace(old, new)
         }
     }
 }
@@ -274,11 +264,9 @@ impl<T: Copy + Sub<Output=T>> Atomic<T> {
 impl<T: Copy + BitAnd<Output=T>> Atomic<T> {
     pub fn fetch_and(&self, data: T, _order: Ordering) -> T {
         atomic! {
-            unsafe {
-                let old = self.data.get();
-                let new = *old & data;
-                ::core::mem::replace(&mut *old, new)
-            }
+            let old = unsafe { &mut *self.data.get() };
+            let new = *old & data;
+            ::core::mem::replace(old, new)
         }
     }
 }
@@ -286,11 +274,9 @@ impl<T: Copy + BitAnd<Output=T>> Atomic<T> {
 impl<T: Copy + BitOr<Output=T>> Atomic<T> {
     pub fn fetch_or(&self, data: T, _order: Ordering) -> T {
         atomic! {
-            unsafe {
-                let old = self.data.get();
-                let new = *old | data;
-                ::core::mem::replace(&mut *old, new)
-            }
+            let old = unsafe { &mut *self.data.get() };
+            let new = *old | data;
+            ::core::mem::replace(old, new)
         }
     }
 }
@@ -298,11 +284,9 @@ impl<T: Copy + BitOr<Output=T>> Atomic<T> {
 impl<T: Copy + BitXor<Output=T>> Atomic<T> {
     pub fn fetch_xor(&self, data: T, _order: Ordering) -> T {
         atomic! {
-            unsafe {
-                let old = self.data.get();
-                let new = *old ^ data;
-                ::core::mem::replace(&mut *old, new)
-            }
+            let old = unsafe { &mut *self.data.get() };
+            let new = *old ^ data;
+            ::core::mem::replace(old, new)
         }
     }
 }
